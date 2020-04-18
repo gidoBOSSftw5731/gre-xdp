@@ -1,0 +1,79 @@
+
+
+
+
+stop 1
+set 1 rate 0.1
+range 1 ttl start 10
+
+range 1 proto udp
+range 1 dst port start 4000
+range 1 dst port min 4000
+range 1 dst port max 4000
+range 1 dst port inc 0
+
+range 1 src port start 4000
+range 1 src port min 4000
+range 1 src port max 4000
+range 1 src port inc 0
+
+
+range 1 dst ip start 2.2.2.2
+range 1 dst ip min 2.2.2.2
+range 1 dst ip max 2.2.2.2
+range 1 dst ip inc 0.0.0.0
+
+range 1 dst mac start e4:43:4b:6d:60:43
+
+range 1 src ip start 10.10.12.1
+range 1 src ip min 10.10.12.1
+range 1 src ip max 10.10.12.1
+
+range 1 src ip inc 0
+
+range 1 size start 64
+range 1 size inc 0
+enable 1 range
+
+
+
+
+
+
+
+
+
+stop 0
+set 0 rate 0.1
+range 0 ttl start 10
+
+range 0 proto udp
+range 0 dst port start 4000
+range 0 dst port min 4000
+range 0 dst port max 4000
+range 0 dst port inc 0
+
+range 0 src port start 4000
+range 0 src port min 4000
+range 0 src port max 4000
+range 0 src port inc 0
+
+range 0 dst ip start 1.1.1.1
+range 0 dst ip min 1.1.1.1
+range 0 dst ip max 1.1.1.1
+range 0 dst ip inc 0.0.0.0
+
+range 0 dst mac start e4:43:4b:6d:60:41
+
+range 0 src ip start 10.10.11.1
+range 0 src ip min 10.10.11.1
+range 0 src ip max 10.10.11.1
+
+range 0 src ip inc 0.0.0.0
+
+range 0 size start 64
+range 0 size inc 0
+enable 0 range
+
+
+
