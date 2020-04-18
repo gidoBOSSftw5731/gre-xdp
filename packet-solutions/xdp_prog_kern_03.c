@@ -222,9 +222,11 @@ static __always_inline int ip_decrease_ttl(struct iphdr *iph)
 }
 
 /* Solution to packet03/assignment-4 */
+/* xdp_router is the name of the xdp program */
 SEC("xdp_router")
 int xdp_router_func(struct xdp_md *ctx)
 {
+	/* this is the packet context*/
 	void *data_end = (void *)(long)ctx->data_end;
 	void *data = (void *)(long)ctx->data;
 	struct bpf_fib_lookup fib_params = {};
@@ -234,6 +236,7 @@ int xdp_router_func(struct xdp_md *ctx)
 	__u16 h_proto;
 	__u64 nh_off;
 	int rc;
+	/* default action is to pass */
 	int action = XDP_PASS;
 
 	nh_off = sizeof(*eth);
@@ -242,18 +245,21 @@ int xdp_router_func(struct xdp_md *ctx)
 		goto out;
 	}
 
+	/* determine if this is IP4 or IPv6 by looking at the Ethernet protocol field */
 	h_proto = eth->h_proto;
 	if (h_proto == bpf_htons(ETH_P_IP)) {
+		/* IPv4 part of the code */
 		iph = data + nh_off;
 
 		if (iph + 1 > data_end) {
 			action = XDP_DROP;
 			goto out;
 		}
-
+		/* as a real router, we need to check the TTL to prevent never ending loops*/
 		if (iph->ttl <= 1)
 			goto out;
 
+		/* populate the fib_params fields to prepare for the lookup */
 		fib_params.family	= AF_INET;
 		fib_params.tos		= iph->tos;
 		fib_params.l4_protocol	= iph->protocol;
@@ -263,6 +269,7 @@ int xdp_router_func(struct xdp_md *ctx)
 		fib_params.ipv4_src	= iph->saddr;
 		fib_params.ipv4_dst	= iph->daddr;
 	} else if (h_proto == bpf_htons(ETH_P_IPV6)) {
+		/* IPv6 part of the code */
 		struct in6_addr *src = (struct in6_addr *) fib_params.ipv6_src;
 		struct in6_addr *dst = (struct in6_addr *) fib_params.ipv6_dst;
 
@@ -271,10 +278,11 @@ int xdp_router_func(struct xdp_md *ctx)
 			action = XDP_DROP;
 			goto out;
 		}
-
+		/* as a real router, we need to check the TTL to prevent never ending loops*/
 		if (ip6h->hop_limit <= 1)
 			goto out;
 
+		/* populate the fib_params fields to prepare for the lookup */
 		fib_params.family	= AF_INET6;
 		fib_params.flowinfo	= *(__be32 *) ip6h & IPV6_FLOWINFO_MASK;
 		fib_params.l4_protocol	= ip6h->nexthdr;
@@ -289,16 +297,22 @@ int xdp_router_func(struct xdp_md *ctx)
 
 	fib_params.ifindex = ctx->ingress_ifindex;
 
+	/* this is where the FIB lookup happens. If the lookup is successful */
+	/* it will populate the fib_params.ifindex with the egress interface index */
+	
 	rc = bpf_fib_lookup(ctx, &fib_params, sizeof(fib_params), 0);
 	switch (rc) {
 	case BPF_FIB_LKUP_RET_SUCCESS:         /* lookup successful */
+		   /* we are a router, so we need to decrease the ttl */
 		if (h_proto == bpf_htons(ETH_P_IP))
 			ip_decrease_ttl(iph);
 		else if (h_proto == bpf_htons(ETH_P_IPV6))
 			ip6h->hop_limit--;
-
+		/* set the correct new source and destionation mac addresses */
+		/* can be found in fib_params.dmac and fib_params.smac */
 		memcpy(eth->h_dest, fib_params.dmac, ETH_ALEN);
 		memcpy(eth->h_source, fib_params.smac, ETH_ALEN);
+		/* and done, now we set the action to bpf_redirect_map with fib_params.ifindex which is the egress port as paramater */
 		action = bpf_redirect_map(&tx_port, fib_params.ifindex, 0);
 		break;
 	case BPF_FIB_LKUP_RET_BLACKHOLE:    /* dest is blackholed; can be dropped */
@@ -316,6 +330,7 @@ int xdp_router_func(struct xdp_md *ctx)
 	}
 
 out:
+	/* and done, update stats and return action */
 	return xdp_stats_record_action(ctx, action);
 }
 
