@@ -62,3 +62,21 @@ unload:
 ./xdp_loader -d enp1s0f1 -U --progsec xdp_pass
 
 ```
+
+to change number of cores / RSS queues:
+
+```
+root@xdp:~/xdp-tutorial/packet03-redirecting# ethtool -L eno2  combined 10
+root@xdp:~/xdp-tutorial/packet03-redirecting# ethtool -l eno2
+Channel parameters for eno2:
+Pre-set maximums:
+RX:		0
+TX:		0
+Other:		1
+Combined:	64
+Current hardware settings:
+RX:		0
+TX:		0
+Other:		1
+Combined:	10
+```
