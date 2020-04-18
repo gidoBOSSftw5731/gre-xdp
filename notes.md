@@ -35,13 +35,28 @@ make clean && make
 
 ```
 ./xdp_loader -d enp1s0f1 -F --progsec xdp_pass
-
-./xdp_loader -d enp1s0f0 -F --progsec xdp_redirect_map
 ./xdp_loader -d enp1s0f1 -F --progsec xdp_pass
-./xdp_prog_user -d enp1s0f0
-./xdp_prog_user -d enp1s0f1
+
+#pin BPF resources (redirect map) to a persistent filesystem
+mount -t bpf bpf /sys/fs/bpf/
+
+# attach xdp_router code to eno2
+./xdp_loader -d eno2 -F --progsec xdp_router
+# attach xdp_router code to eno4
+./xdp_loader -d eno4 -F --progsec xdp_router
+
+# populateredirect_params maps
+./xdp_prog_user -d eno2
+./xdp_prog_user -d eno4
+
+
+```
+Check stats:
+```
+./xdp_stats -d eno4
 ```
 
+unload:
 ```
 ./xdp_loader -d enp1s0f0 -U --progsec xdp_router
 ./xdp_loader -d enp1s0f1 -U --progsec xdp_pass
