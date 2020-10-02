@@ -86,6 +86,7 @@ int  drop_some_http(struct xdp_md *ctx)
 		goto out;
 	}
 
+/*
 	//testing address
 	char *blockedstr = "2606:700:e:30:d34d:b33f:0:1";
 	//struct in6_addr blocked;
@@ -98,7 +99,7 @@ int  drop_some_http(struct xdp_md *ctx)
 		action = XDP_DROP;
 		goto out;
 	}
-
+*/
 
 
 	// yes, goto bad, but this looks like the best way
